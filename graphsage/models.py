@@ -96,7 +96,7 @@ class Model(object):
 
 class MLP(Model):
     """ A standard multi-layer perceptron """
-    def __init__(self, placeholders, dims, categorical=True, **kwargs):
+    def __init__(self, placeholders, dims, categorical=True, use_dropout_inference=False, **kwargs):  # {{ edit_1 }}
         super(MLP, self).__init__(**kwargs)
 
         self.dims = dims
@@ -104,6 +104,7 @@ class MLP(Model):
         self.output_dim = dims[-1]
         self.placeholders = placeholders
         self.categorical = categorical
+        self.use_dropout_inference = use_dropout_inference  # {{ edit_2 }}
 
         self.inputs = placeholders['features']
         self.labels = placeholders['labels']
@@ -137,13 +138,15 @@ class MLP(Model):
                                  act=tf.nn.relu,
                                  dropout=self.placeholders['dropout'],
                                  sparse_inputs=False,
-                                 logging=self.logging))
+                                 logging=self.logging,
+                                 use_dropout_inference=self.use_dropout_inference))  # {{ edit_3 }}
 
         self.layers.append(layers.Dense(input_dim=self.dims[1],
                                  output_dim=self.output_dim,
                                  act=lambda x: x,
                                  dropout=self.placeholders['dropout'],
-                                 logging=self.logging))
+                                 logging=self.logging,
+                                 use_dropout_inference=self.use_dropout_inference))  # {{ edit_4 }}
 
     def predict(self):
         return tf.nn.softmax(self.outputs)
@@ -499,3 +502,4 @@ class Node2VecModel(GeneralizedModel):
         _, self.ranks = tf.nn.top_k(-indices_of_ranks, k=size)
         self.mrr = tf.reduce_mean(tf.div(1.0, tf.cast(self.ranks[:, -1] + 1, tf.float32)))
         tf.summary.scalar('mrr', self.mrr)
+
